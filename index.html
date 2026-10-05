@@ -408,7 +408,7 @@ async function dessinerBrouillon(cv,v,fmt,baseId,refFond){cv._v=v;cv._zones=[];
  ctx.fillStyle="#F2E9DA";ctx.fillRect(0,0,W,H);
  const src=baseId?blob(baseId):(refFond?blob(refFond):"");const im=await chargerImg(src);
  if(im){const r=Math.max(W/im.width,H/im.height),w=im.width*r,h=im.height*r;ctx.globalAlpha=baseId?1:0.28;ctx.drawImage(im,(W-w)/2,(H-h)/2,w,h);ctx.globalAlpha=1}
- if(!baseId){ctx.fillStyle="#8A6A2F";ctx.font='700 13px "Manrope"';ctx.textAlign="center";ctx.fillText("Le visuel sera généré à partir de la référence",W/2,H/2)}
+ if(!baseId){ctx.fillStyle="#8A6A2F";ctx.font='700 13px "Manrope"';ctx.textAlign="center";ctx.fillText("Aperçu de placement : le fond sera recréé par l'IA",W/2,H/2)}
  const taille={S:30,M:40,L:52}[v.titre||"M"];const pad=30;
  ctx.textAlign="center";ctx.font='600 '+taille+'px "Newsreader"';const lignes=wrap(ctx,v.headline,W-pad*2-20);
  const sousTaille=17;ctx.font='500 '+sousTaille+'px "Manrope"';const ls=wrap(ctx,v.sous,W-pad*2-20);const lb=W-pad*2+20;
@@ -420,7 +420,7 @@ async function dessinerBrouillon(cv,v,fmt,baseId,refFond){cv._v=v;cv._zones=[];
  (v.badges||[]).slice().reverse().forEach(t=>{ctx.font='800 14px "Manrope"';ctx.textAlign="left";const w=ctx.measureText(t).width+26;by-=36;const [x,y]=posA(v,"b:"+t,W,H,pad,by);ctx.fillStyle="#C4943A";rrect(ctx,x,y,w,28,14);ctx.fill();ctx.fillStyle="#FFFFFF";ctx.fillText(t,x+13,y+19);cv._zones.push({cle:"b:"+t,x,y,w,h:28})});
  if(v.offre&&v.offre!=="Aucune offre"){ctx.font='800 17px "Manrope"';const w=ctx.measureText(v.offre).width+30;const [ox,oy]=posA(v,"offre",W,H,(W-w)/2,H-pad-98);ctx.fillStyle="#FDFAF4";rrect(ctx,ox,oy,w,34,8);ctx.fill();ctx.strokeStyle="#C4943A";ctx.lineWidth=2;ctx.stroke();ctx.fillStyle="#33241B";ctx.textAlign="center";ctx.fillText(v.offre,ox+w/2,oy+23);cv._zones.push({cle:"offre",x:ox,y:oy,w,h:34})}
  if(v.bouton){ctx.font='800 17px "Manrope"';ctx.textAlign="center";const w=Math.min(W-pad*2,ctx.measureText(v.bouton).width+56);const [bx,by2]=posA(v,"bouton",W,H,(W-w)/2,H-pad-48);ctx.fillStyle="#33241B";rrect(ctx,bx,by2,w,46,10);ctx.fill();ctx.fillStyle="#FDFAF4";ctx.fillText(v.bouton,bx+w/2,by2+29);cv._zones.push({cle:"bouton",x:bx,y:by2,w,h:46})}
- if(v.produit===false){ctx.font='800 12px "Manrope"';ctx.textAlign="left";ctx.fillStyle="rgba(163,52,31,.9)";rrect(ctx,12,12,128,24,12);ctx.fill();ctx.fillStyle="#fff";ctx.fillText("sans produit",26,29)}
+ if(v.produit===false){ctx.font='800 12px "Manrope"';ctx.textAlign="left";ctx.fillStyle="rgba(163,52,31,.9)";rrect(ctx,12,12,128,24,12);ctx.fill();ctx.fillStyle="#fff";ctx.fillText("sans le sac",26,29)}
 }
 
 /* ============ NAVIGATION ============ */
@@ -429,7 +429,7 @@ function navHTML(mob){return ONGLETS.map(([id,t])=>{const n=compte(id);return '<
 let rendreEnAttente=false;const dernierHTML={};
 function poser(sel,html){if(dernierHTML[sel]===html)return false;dernierHTML[sel]=html;$(sel).innerHTML=html;return true}
 function rendre(){if(!S.pret||rendreEnAttente)return;rendreEnAttente=true;setTimeout(()=>{rendreEnAttente=false;rendreMaintenant()},16)}
-function rendreMaintenant(){if(glisse)return;const actif=document.activeElement;if(actif&&actif.matches&&actif.matches("#main input[type=text],#main textarea")&&S.tab!=="marche")return;
+function rendreMaintenant(){if(glisse)return;const actif=document.activeElement;if(!S.force&&actif&&actif.matches&&actif.matches("#main input[type=text],#main textarea")&&S.tab!=="marche")return;
  poser("#nav",navHTML(false));poser("#mobnav",navHTML(true));
  const f={aujourdhui:vAujourdhui,marche:vMarche,creer:vCreer,decliner:vDecliner,valider:vValider,envoyes:vEnvoyes,refs:vRefs,verbatims:vVerbatims}[S.tab]||vAujourdhui;
  let html;try{html=(S.tab!=="aujourdhui"?objbar():"")+f()}catch(e){console.error(e);html='<div class="vide"><h2>Un souci d\'affichage</h2><p class="note">'+esc(e&&e.message)+'</p></div>'}
@@ -575,12 +575,13 @@ function puces(name,vals,courant,multi,aide,avecNom){return '<div class="puces">
 function choixRefs(sel){const vue=sel.map(id=>'<img src="'+blob(id.slice(2))+'" alt="Référence choisie">').join("");
  const bandeau=sel.length?'<div class="choisies"><span class="k" style="color:var(--orclair)">✓ '+(sel.length>1?sel.length+" références choisies":"Référence choisie")+'</span>'+vue+'<button class="btn sec petit" data-a="viderRefs">Changer</button></div>':'<p class="astuce">Étape 1 : clique sur une image ci-dessous pour la choisir comme référence. Elle s\'entoure d\'or avec une coche.</p>';const mes=S.refs.slice().sort((a,b)=>(b.ts||"")<(a.ts||"")?-1:1);const meta=S.metrics.filter(m=>m.thumb).map(m=>({m,s:statAd(m,"7")})).sort((a,b)=>(b.s.roas||0)-(a.s.roas||0)).slice(0,24);
  const btn=(id,src,lab)=>'<button type="button" data-a="ref" data-v="'+esc(id)+'" aria-pressed="'+sel.includes(id)+'" title="'+esc(lab)+'"><img src="'+src+'" alt="'+esc(lab)+'" loading="lazy"></button>';
- return bandeau+'<p class="k">Mes références</p>'+(mes.length?'<div class="refs'+(sel.length?" choix-actif":"")+'">'+mes.map(r=>btn("a:"+r.asset,blob(r.asset),r.note||"référence")).join("")+'</div>':'<p class="note">Aucune référence. Dépose-en ci-dessous ou dans l\'onglet « Mes références ».</p>')
+ return bandeau+'<p class="k">Modèle de mise en page · mes captures</p>'+(mes.length?'<div class="refs'+(sel.length?" choix-actif":"")+'">'+mes.map(r=>btn("a:"+r.asset,blob(r.asset),r.note||"référence")).join("")+'</div>':'<p class="note">Aucune référence. Dépose-en ci-dessous ou dans l\'onglet « Mes références ».</p>')
  +(S.assets?'<label class="btn sec petit" style="align-self:flex-start;cursor:pointer">Déposer une image<input type="file" accept="image/*" multiple data-a="uploadRef" hidden></label>':'')
- +'<p class="k" style="margin-top:6px">Nos créas Meta (meilleures sur 7 jours)</p>'+(meta.length?'<div class="refs'+(sel.length?" choix-actif":"")+'">'+meta.map(x=>btn("a:"+x.m.thumb,blob(x.m.thumb),x.m.nom+" · ROAS "+num(x.s.roas,2))).join("")+'</div>':'<p class="note">Disponibles après la synchronisation Meta.</p>')}
+ +'<p class="k" style="margin-top:6px">Ou reprendre une de nos gagnantes (meilleures sur 7 jours)</p>'+(meta.length?'<div class="refs'+(sel.length?" choix-actif":"")+'">'+meta.map(x=>btn("a:"+x.m.thumb,blob(x.m.thumb),x.m.nom+" · ROAS "+num(x.s.roas,2))).join("")+'</div>':'<p class="note">Disponibles après la synchronisation Meta.</p>')}
 function vCreer(){const f=S.form;autoEtiq(f);const manq=etiqManquantes(f.labels,f.tunnel);const prochain=codeId(prochainNum(),"H1");
  const enCours=S.meres.slice().sort((a,b)=>(b.ts||"")<(a.ts||"")?-1:1).filter(m=>m.statut!=="validee"&&m.statut!=="rejetee").slice(0,8);
- return entete("Créer une créa mère","Étape 1. Tu choisis tes références, tu écris tout, tu génères. La mère validée devient la référence verrouillée (H1).")
+ return entete("Créer une créa mère","La mère validée devient la référence verrouillée (H1), que tu déclines ensuite.")
+ +'<div class="guide" style="margin-bottom:16px"><div><b>Choisis un modèle</b>Une pub qui marche (une capture de concurrent ou une de nos gagnantes). L\'IA copie sa mise en page et son ambiance, jamais son produit ni son texte.</div><div><b>Écris et place ton texte</b>Headline, offre, badges. L\'aperçu montre ton modèle en fond pour que tu places les éléments au bon endroit.</div><div><b>Génère</b>L\'IA recrée le visuel : la mise en page du modèle, notre vrai sac, tes textes à l\'endroit choisi. Résultat dans « À valider ».</div></div>'
  +'<div class="g2"><div class="pile">'
  +'<div class="carte pile"><p class="k">Batch</p>'+selBatch(f.batch,'data-ff="batch"')+'</div>'
  +'<div class="carte pile">'+choixRefs(f.refs)+'<div class="ligne"><button class="btn sec petit" data-a="proposer"'+(S.sample?'':' hidden')+'>Proposer à partir des références</button><span class="note" id="propStatut"></span></div></div>'
@@ -595,8 +596,8 @@ function vCreer(){const f=S.form;autoEtiq(f);const manq=etiqManquantes(f.labels,
  +'<label class="ch">Note pour la génération<textarea data-ff="note" placeholder="Petits changements : sac posé sur une planche, lumière du matin…">'+esc(f.note)+'</textarea></label></div>'
  +'</div><div class="pile">'
  +'<div class="carte pile"><div class="ligne" style="justify-content:space-between"><p class="k">Étiquettes du nom · remplies automatiquement</p><span class="note">'+(manq.length?manq.length+" à compléter":"complètes ✓")+'</span></div>'
- +'<div class="puces">'+["tunnel"].concat(ORDRE_ETIQ.slice(1)).map(k=>{const v=k==="tunnel"?f.tunnel:f.labels[k];return '<span class="tag'+(v?' z-vertclair':'')+'" data-aide="'+esc(ETIQ[k].nom+(v?" : "+v+" · "+defEtiq(k,v):" : sera proposée par Claude à la génération"))+'">'+esc(v||ETIQ[k].nom+" ?")+'</span>'}).join("")+'</div>'
- +'<p class="note">L\'offre et le tunnel se déduisent de ce que tu mets sur la créa. Le reste est proposé par Claude d\'après ta référence et ton texte. Tu n\'as rien à remplir.</p>'
+ +'<div class="puces">'+["tunnel"].concat(ORDRE_ETIQ.slice(1)).map(k=>{const v=k==="tunnel"?f.tunnel:f.labels[k];const auto=!(f.auto&&f.auto[k]);return '<span class="tag'+(v?' z-vertclair':'')+'" data-aide="'+esc(ETIQ[k].nom+(v?" : "+v+" · "+defEtiq(k,v)+(auto?" (déduite automatiquement, elle suit tes changements)":" (choisie par toi, ne bouge plus)"):" : sera remplie par Claude au moment de générer"))+'">'+esc(v?v+(auto?"":" ✎"):ETIQ[k].nom+" ?")+'</span>'}).join("")+'</div>'
+ +'<p class="note">Rien à remplir. L\'offre et le tunnel suivent ce que tu mets sur la créa : une offre de lot donne PACK et BOFU, la garantie ou les avis donnent MOFU, sans offre c\'est TOFU. Les étiquettes avec « ? » sont remplies par Claude quand tu génères. Si tu en changes une toi-même (✎), elle ne bouge plus.</p>'
  +'<details'+(S.etiqOuvert?' open':'')+'><summary class="note" style="cursor:pointer" data-a="etiqOuvert">Modifier les étiquettes</summary><div class="pile" style="margin-top:10px">'+blocEtiq("tunnel",f.tunnel,"tunnel")
  +ORDRE_ETIQ.slice(1).map(k=>blocEtiq(k,f.labels[k],"labels."+k)).join("")+'</div></details></div>'
  +'<div class="carte pile"><p class="k">Formats</p>'+puces("formats",Object.keys(FORMATS),f.formats[0],false)+'<p class="note">Un format à la fois. Pour un autre format, relance la même fiche après.</p>'+'<p class="k">Taille du titre</p>'+puces("titre",["S","M","L"],f.titre,false,{S:"petit",M:"moyen",L:"grand"})+'</div>'
@@ -744,7 +745,7 @@ document.addEventListener("change",async ev=>{const t=ev.target;
 let tempo=null;
 document.addEventListener("input",ev=>{const t=ev.target;
  if(t.dataset.f!==undefined&&t.tagName==="INPUT"){S.filtres[t.dataset.f]=t.value;clearTimeout(tempo);tempo=setTimeout(()=>{const pos=t.selectionStart;rendreMaintenant();const n=document.querySelector('[data-f="'+t.dataset.f+'"]');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}},400);return}
- if(t.dataset.ff&&t.dataset.ff!=="batch"){S.form[t.dataset.ff]=t.value;saveForm();clearTimeout(tempo);tempo=setTimeout(()=>{document.querySelectorAll('canvas[data-draft="form"]').forEach(cv=>dessinerBrouillon(cv,brouillonForm(),cv.dataset.fmt,null,cv.dataset.fond||null))},250);return}
+ if(t.dataset.ff&&t.dataset.ff!=="batch"){S.form[t.dataset.ff]=t.value;saveForm();clearTimeout(tempo);tempo=setTimeout(()=>{const ch=t.dataset.ff,pos=t.selectionStart;S.force=true;rendreMaintenant();S.force=false;const n=document.querySelector('[data-ff="'+ch+'"]');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}},250);return}
  if(t.dataset.vf){const [i,ch]=t.dataset.vf.split(".");const v=S.decl.versions[+i];if(!v)return;v[ch]=t.value;clearTimeout(tempo);tempo=setTimeout(()=>{const cv=document.querySelector('canvas[data-draft="'+i+'"]');if(cv)dessinerBrouillon(cv,v,cv.dataset.fmt,cv.dataset.base||null);const m=S.meres.find(x=>x.id===S.decl.mere);const p=cv&&cv.closest(".vers").querySelector(".chg");if(p&&m){const c=changements(m,v);p.textContent=c.length?"Changé : "+c.join(" · "):"Aucun changement par rapport à H1"}},250)}
 });
 const AIDE_ONGLETS={aujourdhui:"L'objectif, les signaux du jour et ce qu'il y a à faire.",marche:"Les résultats Meta de chaque créa, avec les stratégies de lecture et les filtres par étiquette.",creer:"Fabriquer une nouvelle créa mère : référence, texte, étiquettes, brouillon, génération.",decliner:"Partir d'une mère validée et changer une seule chose par version (accroche, offre, badge).",valider:"Les visuels générés à garder, retoucher ou rejeter.",envoyes:"Envoyer les créas validées sur le Drive, rangées par batch avec leur nom à 9 étiquettes.",refs:"Ta bibliothèque d'inspirations : captures de pubs, TikTok, Pinterest…",verbatims:"Les mots exacts des clients, triés chaque lundi, et le dépôt des exports Zigpoll."};
