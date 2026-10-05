@@ -142,6 +142,7 @@ input[type=password]{width:100%;min-height:42px;border:1px solid var(--filet2);b
 .etape .refs.prod{grid-template-columns:repeat(5,minmax(0,1fr))}.etape .refs.prod .lab{font-size:10.5px}
 .avance{background:var(--surface);border:1px solid var(--filet);border-radius:16px;padding:12px 14px}.avance summary{cursor:pointer;font-weight:700;font-size:13px;color:var(--doux)}
 @media (max-width:1100px){.studio{grid-template-columns:1fr}.studio-apercu{position:static;order:-1}.toile canvas{height:auto;width:100%;max-width:420px}}
+.zoomwrap{position:relative;display:block}.zoomwrap::after{content:"⤢ Agrandir";position:absolute;right:8px;bottom:8px;font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:999px;background:rgba(11,10,9,.72);color:var(--texte);pointer-events:none}
 .zoom{position:fixed;inset:0;z-index:90;background:rgba(5,4,3,.92);backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;cursor:zoom-out}
 .zoom img{max-width:100%;max-height:calc(100vh - 110px);object-fit:contain;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
 .refs.prod{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}.refs.prod button{aspect-ratio:auto;display:flex;flex-direction:column;background:var(--surface2)}.refs.prod img{aspect-ratio:1;height:auto}.refs.prod .lab{font-size:11.5px;font-weight:700;padding:6px 4px;color:var(--texte);text-align:center}
@@ -632,10 +633,10 @@ function vCreer(){const f=S.form;autoEtiq(f);const manq=etiqManquantes(f.labels,
 function prochainNum(){let mx=S.meres.reduce((m,x)=>Math.max(m,+x.num||0),0);(S.metrics||[]).concat(S.recentes||[]).forEach(m=>{const r=/_S(\d+)[HB]?\d*_/i.exec("_"+String(m.nom||"").split("_").slice(1).join("_")+"_");if(r)mx=Math.max(mx,+r[1])});return mx+1}
 function carteMere(m){const img=m.images&&(m.images[(m.formats||[])[0]]||Object.values(m.images)[0]);
  return '<div class="carte pile"><div class="ligne" style="justify-content:space-between"><b>'+esc(m.code)+'</b><span class="statut st-'+esc(m.statut)+'">'+esc(STATUTS[m.statut]||m.statut)+'</span></div>'
- +(img?'<img src="'+blob(img)+'" data-zoom="'+esc(blob(img))+'" alt="" style="width:100%;border-radius:8px;cursor:zoom-in">':'<div class="vide" style="padding:30px 10px">'+(m.statut==="erreur"?esc(m.erreur||"Erreur"):"Génération en cours…")+'</div>')
+ +(img?'<span class="zoomwrap"><img src="'+blob(img)+'" data-zoom="'+esc(blob(img))+'" alt="" style="width:100%;border-radius:8px;cursor:zoom-in;display:block"></span>':'<div class="vide" style="padding:30px 10px">'+(m.statut==="erreur"?esc(m.erreur||"Erreur"):"Génération en cours…")+'</div>')
  +'<p class="note">BATCH '+esc(m.batch)+' · '+esc(m.tunnel)+' · '+esc((m.formats||[]).join(", "))+'</p>'
  +(m.controle&&m.controle.details?'<p class="note">Contrôle : '+esc(m.controle.details)+'</p>':'')
- +(m.statut==="a_valider"?'<div class="ligne"><button class="btn petit" data-a="mereOk" data-id="'+esc(m.id)+'">Valider (devient H1)</button><button class="btn sec petit" data-a="mereRetouche" data-id="'+esc(m.id)+'">Retouche</button><button class="btn rouge petit" data-a="mereRejet" data-id="'+esc(m.id)+'">Rejeter</button></div>':'')+'</div>'}
+ +(m.statut==="a_valider"?'<div class="ligne"><button class="btn petit" data-a="mereOk" data-id="'+esc(m.id)+'">Valider (devient H1)</button><button class="btn sec petit" data-a="mereRetouche" data-id="'+esc(m.id)+'">Corriger</button><button class="btn rouge petit" data-a="mereRejet" data-id="'+esc(m.id)+'">Rejeter</button></div>':'')+'</div>'}
 
 /* ============ VUE : DÉCLINER ============ */
 function vDecliner(){const meres=S.meres.filter(m=>m.statut==="validee").sort((a,b)=>(+b.num)-(+a.num));
@@ -673,10 +674,10 @@ function vValider(){const meres=S.meres.filter(m=>m.statut==="a_valider");const 
  +(meres.length?'<h3 style="margin-bottom:10px">Mères</h3><div class="grille" style="margin-bottom:20px">'+meres.map(carteMere).join("")+'</div>':'')
  +'<h3 style="margin-bottom:10px">Déclinaisons</h3>'+(cs.length?'<div class="grille">'+cs.map(carteVersion).join("")+'</div>':'<div class="vide">Rien à valider pour l\'instant.</div>')}
 function carteVersion(c){return '<div class="carte pile"><div class="ligne" style="justify-content:space-between"><b>'+esc(c.code)+'</b><span class="statut st-'+esc(c.statut)+'">'+esc(STATUTS[c.statut]||c.statut)+'</span></div>'
- +'<div class="g2">'+Object.entries(c.images||{}).map(([f,id])=>'<div><img src="'+blob(id)+'" data-zoom="'+esc(blob(id))+'" alt="" style="width:100%;border-radius:8px;cursor:zoom-in"><p class="note">'+esc(f)+'</p></div>').join("")+'</div>'
+ +'<div class="g2">'+Object.entries(c.images||{}).map(([f,id])=>'<div><span class="zoomwrap"><img src="'+blob(id)+'" data-zoom="'+esc(blob(id))+'" alt="" style="width:100%;border-radius:8px;cursor:zoom-in;display:block"></span><p class="note">'+esc(f)+'</p></div>').join("")+'</div>'
  +'<p class="chg">'+esc((c.changes||[]).join(" · ")||"référence")+'</p>'+(c.controle&&c.controle.details?'<p class="note">Contrôle : '+esc(c.controle.details)+'</p>':'')
  +'<p class="note" style="word-break:break-all">'+esc(c.nom||"")+'</p>'
- +(c.statut==="a_valider"?'<div class="ligne"><button class="btn petit" data-a="versionOk" data-id="'+esc(c.id)+'">Garder</button><button class="btn sec petit" data-a="versionRetouche" data-id="'+esc(c.id)+'">Retouche</button><button class="btn rouge petit" data-a="versionRejet" data-id="'+esc(c.id)+'">Rejeter</button></div>':'')+'</div>'}
+ +(c.statut==="a_valider"?'<div class="ligne"><button class="btn petit" data-a="versionOk" data-id="'+esc(c.id)+'">Garder</button><button class="btn sec petit" data-a="versionRetouche" data-id="'+esc(c.id)+'">Corriger</button><button class="btn rouge petit" data-a="versionRejet" data-id="'+esc(c.id)+'">Rejeter</button></div>':'')+'</div>'}
 
 /* ============ VUE : ENVOYÉS ============ */
 function vEnvoyes(){const prets=S.creas.filter(c=>c.statut==="validee");const env=S.creas.filter(c=>["a_envoyer","envoyee"].includes(c.statut)).sort((a,b)=>(b.envoiTs||"")<(a.envoiTs||"")?-1:1);
@@ -746,7 +747,7 @@ document.addEventListener("click",async ev=>{const lien=ev.target.closest('a[hre
  if(a==="genMere"){await genererMere();return}
  if(a==="mereOk"){await validerMere(t.dataset.id);return}
  if(a==="mereRejet"){const m=S.meres.find(x=>x.id===t.dataset.id);if(m)await ecrire("meres/"+m.id,{statut:"rejetee"},true);return}
- if(a==="mereRetouche"){demanderNote("Retouche de la mère","Que faut-il changer ?",async n=>{await ecrire("meres/"+t.dataset.id,{statut:"a_generer",retouche:n,maj:maintenant()},true);lancer("meres",t.dataset.id);toast("Retouche envoyée au moteur")});return}
+ if(a==="mereRetouche"){const mm=S.meres.find(x=>x.id===t.dataset.id);demanderNote("Retouche de la mère","Ce qu'il faut changer",async n=>{await ecrire("meres/"+t.dataset.id,{statut:"a_generer",retouche:n,maj:maintenant()},true);lancer("meres",t.dataset.id);toast("Retouche envoyée au moteur")},mm&&mm.images?blob(Object.values(mm.images)[0]):null);return}
  if(a==="choisirMere"){S.decl={mere:t.dataset.v,versions:[]};rendre();return}
  if(a==="ajoutVersion"){const m=S.meres.find(x=>x.id===S.decl.mere);if(!m||S.decl.versions.length>=5)return;S.decl.versions.push(nouvelleVersion(m,t.dataset.v));rendre();return}
  if(a==="suppVersion"){S.decl.versions.splice(+t.dataset.i,1);rendre();return}
@@ -754,12 +755,13 @@ document.addEventListener("click",async ev=>{const lien=ev.target.closest('a[hre
  if(a==="memeTexte"){const m=S.meres.find(x=>x.id===t.dataset.id);if(!m)return;S.form=Object.assign(formVide(),{batch:m.batch,headline:m.headline,sous:m.sous||"",offre:m.offre||"",bouton:m.bouton||"",badges:(m.badges||[]).slice(),produit:m.produit!==false,tunnel:m.tunnel,labels:Object.assign({},m.labels),formats:(m.formats||["4:5"]).slice(0,1),pos:Object.assign({},m.pos||{}),titre:m.titre||"M",note:"Même texte que "+m.code+", nouveau visuel"});saveForm();allerA("creer");toast("Textes de "+m.code+" repris : choisis une nouvelle référence");return}
  if(a==="versionOk"){await ecrire("creas/"+t.dataset.id,{statut:"validee",valideTs:maintenant()},true);return}
  if(a==="versionRejet"){await ecrire("creas/"+t.dataset.id,{statut:"rejetee"},true);return}
- if(a==="versionRetouche"){demanderNote("Retouche","Que faut-il changer ? (le reste ne bouge pas)",async n=>{await ecrire("creas/"+t.dataset.id,{statut:"a_generer",retouche:n,maj:maintenant()},true);lancer("creas",t.dataset.id);toast("Retouche envoyée au moteur")});return}
+ if(a==="versionRetouche"){const cc=S.creas.find(x=>x.id===t.dataset.id);demanderNote("Retouche de "+(cc?cc.code:"la version"),"Ce qu'il faut changer",async n=>{await ecrire("creas/"+t.dataset.id,{statut:"a_generer",retouche:n,maj:maintenant()},true);lancer("creas",t.dataset.id);toast("Retouche envoyée au moteur")},cc&&cc.images?blob(Object.values(cc.images)[0]):null);return}
  if(a==="envoyer"){const ids=[...S.sel];for(const id of ids){await ecrire("creas/"+id,{statut:"a_envoyer",envoiTs:maintenant()},true)}S.sel.clear();toast(ids.length+" créa(s) en route vers le Drive");rendre();try{if(window.TL_FONCTION){const r=await window.TL_FONCTION("envoyer-drive",{});toast((r&&r.n||0)+" créa(s) déposée(s) sur le Drive")}}catch(e){toast("Envoi Drive : "+(e.message||"erreur"))}return}
  if(a==="iterer"){await itererGagnante(t.dataset.id);return}
  if(a==="proposer"){await proposerFiche();return}
  if(a==="proposerHooks"){await proposerHooks();return}
- if(a==="choisirHook"){const m=S.meres.find(x=>x.id===S.decl.mere);if(!m||S.decl.versions.length>=5)return;const v=nouvelleVersion(m,"H");v.headline=t.dataset.v;S.decl.versions.push(v);rendre();return}
+ if(a==="choisirHook"){const m=S.meres.find(x=>x.id===S.decl.mere);if(!m||S.decl.versions.length>=5)return;const v=nouvelleVersion(m,"H");v.headline=t.dataset.v.replace(/[«»"“”„]/g,"").trim();S.decl.versions.push(v);rendre();return}
+ if(a==="noteVite"){const i=$("#noteInput");if(i){i.value=(i.value?i.value.replace(/[.\s]*$/,"")+". ":"")+t.dataset.v;i.focus()}return}
  if(a==="noteOk"){const inp=$("#noteInput");const cb=window.__noteCb;$("#modal").innerHTML="";if(cb&&inp&&inp.value.trim())cb(inp.value.trim());return}
 });
 document.addEventListener("change",async ev=>{const t=ev.target;
@@ -776,6 +778,7 @@ document.addEventListener("change",async ev=>{const t=ev.target;
 let tempo=null;
 document.addEventListener("input",ev=>{const t=ev.target;
  if(t.dataset.f!==undefined&&t.tagName==="INPUT"){S.filtres[t.dataset.f]=t.value;clearTimeout(tempo);tempo=setTimeout(()=>{const pos=t.selectionStart;rendreMaintenant();const n=document.querySelector('[data-f="'+t.dataset.f+'"]');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}},400);return}
+ if(["headline","sous","offre","bouton"].includes(t.dataset.ff)||(t.dataset.vf&&/\.(headline|sous|offre|bouton)$/.test(t.dataset.vf))){if(/[«»"“”„]/.test(t.value)){const p0=t.selectionStart;t.value=t.value.replace(/[«»"“”„]/g,"");try{t.setSelectionRange(p0-1,p0-1)}catch(e){}toast("Pas de guillemets : l'IA les recopierait sur le visuel.")}}
  if(t.dataset.ff&&t.dataset.ff!=="batch"){S.form[t.dataset.ff]=t.value;saveForm();clearTimeout(tempo);tempo=setTimeout(()=>{const ch=t.dataset.ff,pos=t.selectionStart;S.force=true;rendreMaintenant();S.force=false;const n=document.querySelector('[data-ff="'+ch+'"]');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(e){}}},250);return}
  if(t.dataset.vf){const [i,ch]=t.dataset.vf.split(".");const v=S.decl.versions[+i];if(!v)return;v[ch]=t.value;clearTimeout(tempo);tempo=setTimeout(()=>{const cv=document.querySelector('canvas[data-draft="'+i+'"]');if(cv)dessinerBrouillon(cv,v,cv.dataset.fmt,cv.dataset.base||null);const m=S.meres.find(x=>x.id===S.decl.mere);const p=cv&&cv.closest(".vers").querySelector(".chg");if(p&&m){const c=changements(m,v);p.textContent=c.length?"Changé : "+c.join(" · "):"Aucun changement par rapport à H1"}},250)}
 });
@@ -800,7 +803,12 @@ document.addEventListener("mouseover",ev=>{const el=ev.target.closest('[data-a],
  const bw=bulle.offsetWidth,bh=bulle.offsetHeight;let x=Math.min(window.innerWidth-bw-10,Math.max(10,r.left+r.width/2-bw/2));let y=r.bottom+8;if(y+bh>window.innerHeight-10)y=r.top-bh-8;bulle.style.left=x+"px";bulle.style.top=y+"px"});
 document.addEventListener("mouseout",ev=>{if(bulleEl&&!bulleEl.contains(ev.relatedTarget)){bulle.classList.remove("on");bulleEl=null}});
 document.addEventListener("scroll",()=>{bulle.classList.remove("on");bulleEl=null},true);
-function demanderNote(titre,q,cb){window.__noteCb=cb;$("#modal").innerHTML='<div class="modal"><div class="boite" style="max-width:520px" role="dialog" aria-modal="true" aria-label="'+esc(titre)+'"><h2>'+esc(titre)+'</h2><label class="ch">'+esc(q)+'<textarea id="noteInput"></textarea></label><div class="ligne"><button class="btn" data-a="noteOk">Envoyer</button><button class="btn sec" data-a="fermer">Annuler</button></div></div></div>';setTimeout(()=>{const i=$("#noteInput");if(i)i.focus()},30)}
+function demanderNote(titre,q,cb,img){window.__noteCb=cb;const vite=["Retirer les guillemets","Corriger une faute dans le texte","Agrandir le sac","Texte plus lisible","Lumière plus naturelle","Retirer l'offre"];
+ $("#modal").innerHTML='<div class="modal"><div class="boite" style="max-width:620px" role="dialog" aria-modal="true" aria-label="'+esc(titre)+'"><h2>'+esc(titre)+'</h2>'
+ +(img?'<img src="'+esc(img)+'" alt="" style="max-height:260px;width:auto;align-self:center;border-radius:12px">':'')
+ +'<p class="note">Écris ce qui ne va pas. L\'IA refait <b style="color:var(--texte)">la même image</b> en corrigeant seulement ça : tout le reste ne bouge pas. La nouvelle version revient dans « À valider » en 1 à 3 minutes, à la place de celle-ci.</p>'
+ +'<div class="puces">'+vite.map(v=>'<button type="button" class="puce" data-a="noteVite" data-v="'+esc(v)+'">'+esc(v)+'</button>').join("")+'</div>'
+ +'<label class="ch">'+esc(q)+'<textarea id="noteInput" placeholder="Exemple : le sac est trop petit, et il y a une faute à « tartine »"></textarea></label><div class="ligne"><button class="btn" data-a="noteOk">Lancer la retouche</button><button class="btn sec" data-a="fermer">Annuler</button></div></div></div>';setTimeout(()=>{const i=$("#noteInput");if(i)i.focus()},30)}
 
 async function envoyerImages(files){if(!S.assets){toast("Dépôt indisponible : accès Éditeur requis.");return}let n=0;for(const f of files){try{const r=await S.assets.upload(f);await ecrire("refs/r"+r.id,{asset:r.id,note:"",tags:[],ts:maintenant(),par:S.uid});if(S.tab==="creer"){S.form.refs=["a:"+r.id];saveForm();rendre()}n++}catch(e){toast(e&&e.code==="too_large"?"Image trop lourde (20 Mo max).":"Dépôt refusé : "+(e&&e.code||"erreur"))}}if(n)toast(n+" référence(s) ajoutée(s)")}
 async function envoyerDepots(files){if(!S.assets)return;let n=0;for(const f of files){const ext=(f.name.split(".").pop()||"").toLowerCase();const type={csv:"text/csv",txt:"text/plain",json:"application/json",md:"text/markdown",pdf:"application/pdf"}[ext];try{const r=await S.assets.upload(f,type?{type}:undefined);await ecrire("depots/d"+r.id,{asset:r.id,nom:f.name,ts:maintenant(),traite:false,par:S.uid});n++}catch(e){toast("Dépôt refusé : "+(e&&e.code||"erreur"))}}if(n)toast(n+" fichier(s) déposé(s)")}
