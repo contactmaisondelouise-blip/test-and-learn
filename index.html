@@ -129,6 +129,19 @@ body.hors-ligne .side,body.hors-ligne .mobnav{display:none}body.hors-ligne .app{
 input[type=password]{width:100%;min-height:42px;border:1px solid var(--filet2);border-radius:12px;background:var(--surface2);padding:9px 12px;font-size:14px;color:var(--texte)}
 .bulle{position:fixed;z-index:80;max-width:300px;padding:9px 12px;border-radius:11px;background:#2A2520;border:1px solid rgba(212,255,58,.35);color:var(--texte);font-size:12.5px;line-height:1.45;box-shadow:0 12px 30px rgba(0,0,0,.55);pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .12s,transform .12s}
 .bulle.on{opacity:1;transform:none}
+.studio{display:grid;grid-template-columns:minmax(340px,460px) minmax(0,1fr);gap:20px;align-items:start}
+.studio-reglages{display:flex;flex-direction:column;gap:10px;min-width:0}
+.studio-apercu{position:sticky;top:16px;min-width:0}
+.toile{display:flex;justify-content:center;background:var(--surface2);border-radius:14px;padding:12px}
+.toile canvas{height:min(calc(100vh - 330px),720px);width:auto;max-width:100%;border-radius:10px;touch-action:none;cursor:grab;box-shadow:0 14px 40px rgba(0,0,0,.45)}
+.etape{background:var(--surface);border:1px solid var(--filet);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.etape.fait{border-color:rgba(212,255,58,.22)}
+.etape-t{display:flex;align-items:center;gap:10px}
+.etape-t .num{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;background:var(--surface3);color:var(--texte);flex:none}
+.etape.fait .num{background:var(--grad);color:#0B0F02}
+.etape .refs.prod{grid-template-columns:repeat(5,minmax(0,1fr))}.etape .refs.prod .lab{font-size:10.5px}
+.avance{background:var(--surface);border:1px solid var(--filet);border-radius:16px;padding:12px 14px}.avance summary{cursor:pointer;font-weight:700;font-size:13px;color:var(--doux)}
+@media (max-width:1100px){.studio{grid-template-columns:1fr}.studio-apercu{position:static;order:-1}.toile canvas{height:auto;width:100%;max-width:420px}}
 .zoom{position:fixed;inset:0;z-index:90;background:rgba(5,4,3,.92);backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;cursor:zoom-out}
 .zoom img{max-width:100%;max-height:calc(100vh - 110px);object-fit:contain;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
 .refs.prod{grid-template-columns:repeat(auto-fill,minmax(130px,1fr))}.refs.prod button{aspect-ratio:auto;display:flex;flex-direction:column;background:var(--surface2)}.refs.prod img{aspect-ratio:1;height:auto}.refs.prod .lab{font-size:11.5px;font-weight:700;padding:6px 4px;color:var(--texte);text-align:center}
@@ -585,37 +598,37 @@ function choixRefs(sel){const vue=sel.map(id=>'<img src="'+blob(id.slice(2))+'" 
  const mes=S.refs.slice().sort((a,b)=>(b.ts||"")<(a.ts||"")?-1:1).slice(0,12);
  const depot=S.assets?'<label class="depot"><input type="file" accept="image/*" data-a="uploadRef" hidden><b>'+(sel.length?"Déposer un autre modèle":"Déposer le modèle")+'</b><span class="note">La pub qui t\'inspire (capture BrandSearch, TikTok, Instagram…). L\'IA copie sa mise en page, pas son texte ni son produit.</span></label>':'<p class="alerte">Connecte-toi pour déposer une image.</p>';
  return '<p class="k">Le modèle de mise en page</p>'+bandeau+(sel.length?'':depot)+(mes.length&&!sel.length?'<p class="note" style="margin-top:4px">Ou reprends une de tes captures :</p><div class="refs">'+mes.map(r=>btn("a:"+r.asset,blob(r.asset),r.note||"capture")).join("")+'</div>':'')+(sel.length?'<details><summary class="note" style="cursor:pointer">Utiliser un autre modèle</summary><div class="pile" style="margin-top:8px">'+depot+'</div></details>':'')}
+function etape(n,titre,fait,corps,aide){return '<section class="etape'+(fait?' fait':'')+'"><div class="etape-t"><span class="num">'+(fait?"✓":n)+'</span><h3>'+titre+'</h3>'+(aide?'<span class="note" style="margin-left:auto">'+aide+'</span>':'')+'</div>'+corps+'</section>'}
 function vCreer(){const f=S.form;autoEtiq(f);const manq=etiqManquantes(f.labels,f.tunnel);const prochain=codeId(prochainNum(),"H1");
  const enCours=S.meres.slice().sort((a,b)=>(b.ts||"")<(a.ts||"")?-1:1).filter(m=>m.statut!=="validee"&&m.statut!=="rejetee").slice(0,8);
- return entete("Créer une créa mère","La mère validée devient la référence verrouillée (H1), que tu déclines ensuite.")
- +'<div class="guide" style="margin-bottom:16px"><div><b>Dépose ton modèle</b>La pub qui t\'inspire. L\'IA copie sa mise en page et son ambiance, jamais son produit ni son texte. Pour refaire une de nos gagnantes : bouton « Itérer cette gagnante » dans « Ce qui marche ».</div><div><b>Écris et place ton texte</b>Headline, offre, badges. L\'aperçu montre ton modèle en fond pour que tu places les éléments au bon endroit.</div><div><b>Génère</b>L\'IA recrée le visuel : la mise en page du modèle, notre vrai sac, tes textes à l\'endroit choisi. Résultat dans « À valider ».</div></div>'
- +'<div class="g2"><div class="pile">'
- +'<div class="carte pile"><p class="k">Batch</p>'+selBatch(f.batch,'data-ff="batch"')+'</div>'
- +'<div class="carte pile">'+choixRefs(f.refs)+'</div><div class="carte pile">'+choixProduit(f)+'<div class="ligne"><button class="btn sec petit" data-a="proposer"'+(S.sample?'':' hidden')+'>Proposer une headline à partir du modèle</button><span class="note" id="propStatut"></span></div></div>'
- +'<div class="carte pile"><p class="k">Ce que tu veux voir</p>'
- 
- +'<label class="ch">Idée du visuel<textarea data-ff="idee" placeholder="Le sac sur un plan de travail en bois, une miche dedans, lumière du matin">'+esc(f.idee)+'</textarea></label>'
- +'<p class="k">Les textes</p><div class="seg" role="group" aria-label="Textes">'+[["modele","Garder ceux du modèle"],["miens","Écrire les miens"]].map(([k,t])=>'<button data-a="textes" data-v="'+k+'" aria-pressed="'+((f.textes||"miens")===k)+'" data-aide="'+(k==="modele"?"L\'IA reprend mot pour mot la headline et les textes de ton modèle. Tu ne remplis que ce que tu veux changer.":"Tu écris ta headline et tes textes.")+'">'+t+'</button>').join("")+'</div>'
- +(f.textes==="modele"?'<p class="astuce">Les textes du modèle sont repris à l\'identique. Remplis un champ seulement si tu veux le remplacer. Pour retirer l\'offre, choisis « Aucune offre ».</p>':'')
- +'<label class="ch">Headline'+(f.textes==="modele"?' (vide = celle du modèle)':'')+'<input type="text" data-ff="headline" value="'+esc(f.headline)+'" placeholder="'+(f.textes==="modele"?"Laisse vide pour garder celle du modèle":"Pourquoi le sachet du boulanger ne suffit plus ?")+'"></label>'
- +'<label class="ch">Sous-titre'+(f.textes==="modele"?' (vide = celui du modèle)':'')+'<input type="text" data-ff="sous" value="'+esc(f.sous)+'"></label>'
- +'<label class="ch">Offre</label>'+(f.textes==="modele"?'<div class="puces"><button type="button" class="puce" data-a="offreModele" aria-pressed="'+(!f.offre)+'">Celle du modèle</button></div>':'')+puces("offre",OFFRES,f.offre,false)+'<input type="text" data-ff="offre" value="'+esc(f.offre)+'" aria-label="Offre libre">'
- +'<label class="ch">Bouton<input type="text" data-ff="bouton" value="'+esc(f.bouton)+'"></label>'
- +'<label class="ch">Badges</label>'+puces("badges",BADGES,f.badges,true)
- +'<label class="ch">Note pour la génération<textarea data-ff="note" placeholder="Petits changements : sac posé sur une planche, lumière du matin…">'+esc(f.note)+'</textarea></label></div>'
- +'</div><div class="pile">'
- +'<div class="carte pile"><div class="ligne" style="justify-content:space-between"><p class="k">Étiquettes du nom · remplies automatiquement</p><span class="note">'+(manq.length?manq.length+" à compléter":"complètes ✓")+'</span></div>'
- +'<div class="puces">'+["tunnel"].concat(ORDRE_ETIQ.slice(1)).map(k=>{const v=k==="tunnel"?f.tunnel:f.labels[k];const auto=!(f.auto&&f.auto[k]);return '<span class="tag'+(v?' z-vertclair':'')+'" data-aide="'+esc(ETIQ[k].nom+(v?" : "+v+" · "+defEtiq(k,v)+(auto?" (déduite automatiquement, elle suit tes changements)":" (choisie par toi, ne bouge plus)"):" : sera remplie par Claude au moment de générer"))+'">'+esc(v?v+(auto?"":" ✎"):ETIQ[k].nom+" ?")+'</span>'}).join("")+'</div>'
- +'<p class="note">Rien à remplir. L\'offre et le tunnel suivent ce que tu mets sur la créa : une offre de lot donne PACK et BOFU, la garantie ou les avis donnent MOFU, sans offre c\'est TOFU. Les étiquettes avec « ? » sont remplies par Claude quand tu génères. Si tu en changes une toi-même (✎), elle ne bouge plus.</p>'
- +'<details'+(S.etiqOuvert?' open':'')+'><summary class="note" style="cursor:pointer" data-a="etiqOuvert">Modifier les étiquettes</summary><div class="pile" style="margin-top:10px">'+blocEtiq("tunnel",f.tunnel,"tunnel")
- +ORDRE_ETIQ.slice(1).map(k=>blocEtiq(k,f.labels[k],"labels."+k)).join("")+'</div></details></div>'
- +'<div class="carte pile"><p class="k">Formats</p>'+puces("formats",Object.keys(FORMATS),f.formats[0],false)+'<p class="note">Un format à la fois. Pour un autre format, relance la même fiche après.</p>'+'<p class="k">Taille du titre</p>'+puces("titre",["S","M","L"],f.titre,false,{S:"petit",M:"moyen",L:"grand"})+'</div>'
- +'<div class="carte pile"><p class="k">Brouillon (gratuit, instantané)</p>'+(()=>{const p=f.produit===false?null:PRODUITS.find(x=>x.k===(f.sac||"pain"));return p?'<div class="ligne" style="flex-wrap:nowrap"><img src="'+blob(p.img)+'" alt="" style="width:72px;height:72px;object-fit:cover;border-radius:12px;border:2px solid var(--or)"><p class="note"><b style="color:var(--texte)">Produit : '+esc(p.nom)+'</b><br>Ce sac sera placé dans le visuel à l\'identique, d\'après sa photo officielle.</p></div>':'<p class="note"><b style="color:var(--texte)">Sans produit</b> : la scène seule.</p>'})()+'<p class="astuce">Tout se déplace : clique sur la headline, le sous-titre, un badge, l\'offre ou le bouton, garde appuyé et fais glisser. Le moteur reprend ce placement.</p><div>'+(f.formats.length?f.formats:["4:5"]).map(fmt=>'<div style="max-width:440px;margin:0 auto"><canvas style="width:100%;border-radius:8px;border:1px solid var(--filet);touch-action:none;cursor:grab" data-draft="form" data-fmt="'+fmt+'"'+(f.refs[0]?' data-fond="'+esc(f.refs[0].slice(2))+'"':'')+'></canvas><p class="note">'+fmt+'</p></div>').join("")+'</div>'
- +'<p class="note">Le nom sera : <b>'+esc(nomComplet(prochain,f.labels,f.tunnel)||"incomplet, il manque "+manq.join(", "))+'</b></p>'
- +(!f.batch||(!f.headline&&f.textes!=="modele")||!f.formats.length||!f.refs.length?'<p class="alerte">Pour générer : '+[!f.batch&&"un batch",!f.refs.length&&"une référence",!f.headline&&f.textes!=="modele"&&"une headline",!f.formats.length&&"un format"].filter(Boolean).join(" · ")+'</p>':'')
- +'<div class="ligne"><button class="btn or" data-a="genMere"'+(!f.batch||(!f.headline&&f.textes!=="modele")||!f.formats.length||!f.refs.length?' disabled':'')+'>Générer la mère ('+f.formats.length+' génération'+(f.formats.length>1?'s':'')+')</button><button class="btn sec" data-a="razForm">Nouvelle fiche</button></div></div>'
- +'</div></div>'
- +'<h2 style="margin:24px 0 10px">Mes mères en cours</h2>'+(enCours.length?'<div class="grille">'+enCours.map(carteMere).join("")+'</div>':'<div class="vide">Aucune mère en cours.</div>')}
+ const modele=f.textes==="modele";const manque=[!f.refs.length&&"un modèle",!f.headline&&!modele&&"une headline",!f.batch&&"un batch"].filter(Boolean);
+ const p=f.produit===false?null:PRODUITS.find(x=>x.k===(f.sac||"pain"));
+ const reglages=
+  etape(1,"Le modèle",f.refs.length,choixRefs(f.refs),"la pub qui t'inspire")
+ +etape(2,"Le produit",true,choixProduit(f).replace('<p class="k">Le produit à montrer</p>',''),"")
+ +etape(3,"Les textes",modele||!!f.headline,'<div class="seg" role="group" aria-label="Textes">'+[["miens","Écrire les miens"],["modele","Garder ceux du modèle"]].map(([k,t])=>'<button data-a="textes" data-v="'+k+'" aria-pressed="'+((f.textes||"miens")===k)+'" data-aide="'+(k==="modele"?"L\'IA reprend mot pour mot les textes de ton modèle. Tu remplis seulement ce que tu veux changer.":"Tu écris ta headline et ton sous-titre.")+'">'+t+'</button>').join("")+'</div>'
+   +'<input type="text" data-ff="headline" value="'+esc(f.headline)+'" placeholder="'+(modele?"Headline : vide = celle du modèle":"Ta headline")+'" aria-label="Headline">'
+   +'<input type="text" data-ff="sous" value="'+esc(f.sous)+'" placeholder="'+(modele?"Sous-titre : vide = celui du modèle":"Sous-titre (facultatif)")+'" aria-label="Sous-titre">'
+   +'<div class="ligne" style="flex-wrap:nowrap"><textarea data-ff="idee" style="min-height:52px" placeholder="Ce que tu veux voir (facultatif) : deux sacs baguette sur la table, lumière du matin…" aria-label="Idée du visuel">'+esc(f.idee)+'</textarea></div>'
+   +(S.sample?'<div class="ligne"><button class="btn sec petit" data-a="proposer">✦ Proposer une headline</button><span class="note" id="propStatut"></span></div>':''),"")
+ +etape(4,"Offre et badges",true,(modele?'<div class="puces"><button type="button" class="puce" data-a="offreModele" aria-pressed="'+(!f.offre)+'">Offre du modèle</button></div>':'')+puces("offre",OFFRES,f.offre,false)
+   +'<p class="k" style="margin-top:4px">Badges</p>'+puces("badges",BADGES,f.badges,true)
+   +'<input type="text" data-ff="bouton" value="'+esc(f.bouton)+'" placeholder="Texte du bouton" aria-label="Bouton">',"tout se déplace sur l'aperçu")
+ +etape(5,"Batch et format",!!f.batch,selBatch(f.batch,'data-ff="batch"')+puces("formats",Object.keys(FORMATS),f.formats[0],false),"")
+ +'<details class="avance"><summary>Réglages avancés : étiquettes du nom, taille du titre, note</summary><div class="pile" style="margin-top:12px">'
+   +'<p class="k">Taille du titre</p>'+puces("titre",["S","M","L"],f.titre,false,{S:"petit",M:"moyen",L:"grand"})
+   +'<label class="ch">Note pour l\'IA<textarea data-ff="note" placeholder="Petits détails : sac posé sur une planche…">'+esc(f.note)+'</textarea></label>'
+   +'<p class="k">Étiquettes du nom (remplies toutes seules)</p><div class="puces">'+["tunnel"].concat(ORDRE_ETIQ.slice(1)).map(k=>{const v=k==="tunnel"?f.tunnel:f.labels[k];const auto=!(f.auto&&f.auto[k]);return '<span class="tag'+(v?' z-vertclair':'')+'" data-aide="'+esc(ETIQ[k].nom+(v?" : "+v+" · "+defEtiq(k,v)+(auto?" (déduite automatiquement)":" (choisie par toi)"):" : remplie par Claude quand tu génères"))+'">'+esc(v?v+(auto?"":" ✎"):ETIQ[k].nom+" ?")+'</span>'}).join("")+'</div>'
+   +blocEtiq("tunnel",f.tunnel,"tunnel")+ORDRE_ETIQ.slice(1).map(k=>blocEtiq(k,f.labels[k],"labels."+k)).join("")+'</div></details>';
+ const apercu='<div class="studio-apercu"><div class="carte pile" style="gap:10px"><div class="ligne" style="justify-content:space-between"><p class="k">Aperçu · '+esc(f.formats[0]||"4:5")+'</p><span class="note">Fais glisser les textes et badges</span></div>'
+  +'<div class="toile">'+(f.formats.length?f.formats:["4:5"]).map(fmt=>'<canvas data-draft="form" data-fmt="'+fmt+'"'+(f.refs[0]?' data-fond="'+esc(f.refs[0].slice(2))+'"':'')+'></canvas>').join("")+'</div>'
+  +'<div class="ligne" style="flex-wrap:nowrap;gap:12px">'+(p?'<img src="'+blob(p.img)+'" alt="" style="width:46px;height:46px;object-fit:cover;border-radius:10px;border:2px solid var(--or)">':'')+'<p class="note" style="flex:1"><b style="color:var(--texte)">'+(p?esc(p.nom):"Sans produit")+'</b> · '+(modele?"textes du modèle":"tes textes")+'<br><span style="word-break:break-all">'+esc(nomComplet(prochain,f.labels,f.tunnel)||(prochain+" · étiquettes complétées à la génération"))+'</span></p></div>'
+  +(manque.length?'<p class="alerte">Il manque '+manque.join(", ")+'.</p>':'')
+  +'<button class="btn or" style="min-height:52px;font-size:15px" data-a="genMere"'+(manque.length?' disabled':'')+'>Générer la créa</button>'
+  +'<div class="ligne" style="justify-content:space-between"><span class="note">Résultat dans « À valider » en 1 à 3 minutes.</span><button class="btn sec petit" data-a="razForm">Nouvelle fiche</button></div></div></div>';
+ return '<div class="tete"><div><h1>Créer</h1><p>Une idée neuve à partir d\'une pub qui t\'inspire. Pour refaire une de nos gagnantes : « Itérer cette gagnante » dans « Ce qui marche ».</p></div></div>'
+ +'<div class="studio"><div class="studio-reglages">'+reglages+'</div>'+apercu+'</div>'
+ +'<h2 style="margin:28px 0 10px">Mes mères en cours</h2>'+(enCours.length?'<div class="grille">'+enCours.map(carteMere).join("")+'</div>':'<div class="vide">Aucune mère en cours.</div>')}
 function prochainNum(){let mx=S.meres.reduce((m,x)=>Math.max(m,+x.num||0),0);(S.metrics||[]).concat(S.recentes||[]).forEach(m=>{const r=/_S(\d+)[HB]?\d*_/i.exec("_"+String(m.nom||"").split("_").slice(1).join("_")+"_");if(r)mx=Math.max(mx,+r[1])});return mx+1}
 function carteMere(m){const img=m.images&&(m.images[(m.formats||[])[0]]||Object.values(m.images)[0]);
  return '<div class="carte pile"><div class="ligne" style="justify-content:space-between"><b>'+esc(m.code)+'</b><span class="statut st-'+esc(m.statut)+'">'+esc(STATUTS[m.statut]||m.statut)+'</span></div>'
@@ -636,7 +649,7 @@ function vDecliner(){const meres=S.meres.filter(m=>m.statut==="validee").sort((a
  h+='<div class="g2" style="margin-bottom:14px"><div class="carte pile"><div class="ligne" style="justify-content:space-between"><h3>'+esc(m.code)+' · référence verrouillée</h3><span class="tag z-vert">H1</span></div>'+(base?'<img src="'+blob(base)+'" data-zoom="'+esc(blob(base))+'" alt="" style="width:100%;max-width:320px;border-radius:8px;cursor:zoom-in">':'')
  +'<p class="note">Headline : « '+esc(m.headline)+' » · '+esc(m.tunnel)+' · BATCH '+esc(m.batch)+'</p><div class="ligne"><button class="btn sec petit" data-a="memeTexte" data-id="'+esc(m.id)+'">Même texte, nouveau visuel</button></div></div>'
  +'<div class="carte pile"><p class="k">Déjà déclinées</p>'+(existantes.length?existantes.map(c=>'<div class="ligne" style="justify-content:space-between"><span><b>'+esc(c.code)+'</b> '+esc((c.changes||[]).join(" · "))+'</span><span class="statut st-'+esc(c.statut)+'">'+esc(STATUTS[c.statut]||c.statut)+'</span></div>').join(""):'<p class="note">Aucune pour l\'instant.</p>')+'</div></div>';
- h+='<div class="ligne" style="margin-bottom:10px"><button class="btn sec" data-a="ajoutVersion" data-v="H"'+(S.decl.versions.length>=5?' disabled':'')+'>+ Accroche (H)</button><button class="btn sec" data-a="ajoutVersion" data-v="B"'+(S.decl.versions.length>=5?' disabled':'')+'>+ Élément (B)</button><button class="btn sec" data-a="proposerHooks"'+(S.sample?'':' hidden')+'>Proposer 10 accroches</button><span class="note">1 à 5 versions par passage · '+S.decl.versions.length+'/5</span></div><div id="hooksProp"></div>';
+ h+='<div class="carte pile" style="margin-bottom:12px"><p class="k">Batch où partent ces déclinaisons</p>'+selBatch(S.decl.batch||m.batch,'data-db="1"')+'</div><div class="ligne" style="margin-bottom:10px"><button class="btn sec" data-a="ajoutVersion" data-v="H"'+(S.decl.versions.length>=5?' disabled':'')+'>+ Accroche (H)</button><button class="btn sec" data-a="ajoutVersion" data-v="B"'+(S.decl.versions.length>=5?' disabled':'')+'>+ Élément (B)</button><button class="btn sec" data-a="proposerHooks"'+(S.sample?'':' hidden')+'>Proposer 10 accroches</button><span class="note">1 à 5 versions par passage · '+S.decl.versions.length+'/5</span></div><div id="hooksProp"></div>';
  h+='<div class="pile">'+S.decl.versions.map((v,i)=>{const ch=changements(m,v);return '<div class="vers"><div><canvas data-draft="'+i+'" data-fmt="'+fmt+'" data-base="'+esc(base||"")+'"></canvas></div><div class="pile">'
  +'<div class="ligne" style="justify-content:space-between"><b>'+esc(v.code)+'</b><button class="btn rouge petit" data-a="suppVersion" data-i="'+i+'">Retirer</button></div>'
  +'<label class="ch">Headline<input type="text" data-vf="'+i+'.headline" value="'+esc(v.headline)+'"></label>'
@@ -729,7 +742,7 @@ document.addEventListener("click",async ev=>{const lien=ev.target.closest('a[hre
  if(a==="viderRefs"){S.form.refs=[];saveForm();rendre();return}
  if(a==="razForm"){S.form=formVide();saveForm();rendre();return}
  if(a==="creerBatch"){const n=String(($("#nouveauBatch")||{}).value||"").trim();if(!n){toast("Indique un numéro de batch.");return}
-  if(!S.batches.some(b=>String(b.numero)===n)){await ecrire("batches/b"+n,{numero:n,ts:maintenant(),par:S.uid})}S.form.batch=n;saveForm();toast("BATCH "+n+" prêt");rendre();return}
+  if(!S.batches.some(b=>String(b.numero)===n)){await ecrire("batches/b"+n,{numero:n,ts:maintenant(),par:S.uid})}if(S.tab==="decliner")S.decl.batch=n;else{S.form.batch=n;saveForm()}toast("BATCH "+n+" prêt");rendre();return}
  if(a==="genMere"){await genererMere();return}
  if(a==="mereOk"){await validerMere(t.dataset.id);return}
  if(a==="mereRejet"){const m=S.meres.find(x=>x.id===t.dataset.id);if(m)await ecrire("meres/"+m.id,{statut:"rejetee"},true);return}
@@ -753,6 +766,7 @@ document.addEventListener("change",async ev=>{const t=ev.target;
  if(t.dataset.f!==undefined&&t.tagName==="SELECT"){S.filtres[t.dataset.f]=t.value;rendre();return}
  if(t.dataset.a==="comparer"){S.comparer=t.value;rendre();return}
  if(t.dataset.ff==="batch"){S.form.batch=t.value;saveForm();rendre();return}
+ if(t.dataset.db){S.decl.batch=t.value;rendre();return}
  if(t.dataset.a==="sel"){if(t.checked)S.sel.add(t.dataset.id);else S.sel.delete(t.dataset.id);rendre();return}
  if(t.dataset.a==="uploadRef"){await envoyerImages(t.files);t.value="";return}
  if(t.dataset.a==="uploadDepot"){await envoyerDepots(t.files);t.value="";return}
@@ -801,7 +815,7 @@ async function validerMere(id){const m=S.meres.find(x=>x.id===id);if(!m)return;i
  S.decl={mere:id,versions:[]};toast(m.code+"H1 validée : prête à décliner");}
 async function genererDeclinaisons(){const m=S.meres.find(x=>x.id===S.decl.mere);if(!m)return;let n=0;
  for(const v of S.decl.versions){const labels=Object.assign({},m.labels,{tunnel:v.tunnel});if(v.tunnel!==m.tunnel&&v.tunnel==="BOFU"&&labels.offre==="NONE")labels.offre="PACK";
-  const nom=nomComplet(v.code,labels,v.tunnel);const ok=await ecrire("creas/"+v.code,{mere:m.code,mereId:m.id,code:v.code,type:v.type,batch:m.batch,nom,labels,tunnel:v.tunnel,headline:v.headline,sous:v.sous,offre:v.offre,bouton:v.bouton,badges:v.badges,produit:v.produit,sac:m.sac||"pain",titre:v.titre,note:v.note,pos:v.pos||{},changes:changements(m,v),formats:m.formats,base:m.images,statut:"a_generer",images:{},ts:maintenant(),par:S.uid});if(ok){n++;lancer("creas",v.code)}}
+  const nom=nomComplet(v.code,labels,v.tunnel);const ok=await ecrire("creas/"+v.code,{mere:m.code,mereId:m.id,code:v.code,type:v.type,batch:S.decl.batch||m.batch,nom,labels,tunnel:v.tunnel,headline:v.headline,sous:v.sous,offre:v.offre,bouton:v.bouton,badges:v.badges,produit:v.produit,sac:m.sac||"pain",titre:v.titre,note:v.note,pos:v.pos||{},changes:changements(m,v),formats:m.formats,base:m.images,statut:"a_generer",images:{},ts:maintenant(),par:S.uid});if(ok){n++;lancer("creas",v.code)}}
  S.decl.versions=[];toast(n+" déclinaison(s) envoyée(s) au moteur");rendre()}
 async function itererGagnante(adId){const x=S.metrics.find(m=>m.id===adId)||(S.recentes||[]).find(m=>m.id===adId);if(!x||!x.thumb){toast("Visuel indisponible pour cette créa.");return}const e=etiqMeta(x)||{};
  const f=Object.assign(formVide(),{batch:S.form.batch||"",refs:["a:"+x.thumb],textes:"modele",headline:"",sous:"",offre:"",bouton:"",badges:[],produit:true,sac:S.form.sac||"pain",formats:[S.form.formats&&S.form.formats[0]||"4:5"],note:"Itération de la gagnante "+x.nom+". "});
