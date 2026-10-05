@@ -142,7 +142,7 @@ input[type=password]{width:100%;min-height:42px;border:1px solid var(--filet2);b
 .etape-t .num{width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;background:var(--surface3);color:var(--texte);flex:none}
 .etape.fait .num{background:var(--grad);color:#0B0F02}
 .etape .refs.prod{grid-template-columns:repeat(5,minmax(0,1fr))}.etape .refs.prod .lab{font-size:10.5px}
-.avance{background:var(--surface);border:1px solid var(--filet);border-radius:16px;padding:12px 14px}.avance summary{cursor:pointer;font-weight:700;font-size:13px;color:var(--doux)}
+.avance{background:var(--surface);border:1px solid var(--filet);border-radius:16px;padding:12px 14px}.avance summary{cursor:pointer;font-weight:800;font-size:13.5px;color:var(--texte)}.avance{border-style:dashed}
 @media (max-width:1100px){.studio{grid-template-columns:1fr}.studio-apercu{position:static;order:-1}.toile canvas{height:auto;width:100%;max-width:420px}}
 .zoomwrap{position:relative;display:block}.zoomwrap::after{content:"⤢ Agrandir";position:absolute;right:8px;bottom:8px;font-size:11.5px;font-weight:800;padding:4px 9px;border-radius:999px;background:rgba(11,10,9,.72);color:var(--texte);pointer-events:none}
 .zoom{position:fixed;inset:0;z-index:90;background:rgba(5,4,3,.92);backdrop-filter:blur(6px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;cursor:zoom-out}
@@ -581,11 +581,24 @@ function ouvrirFiche(id){const m=S.metrics.find(x=>x.id===id);if(!m)return;const
  $("#modal").innerHTML=html}
 
 /* ============ VUE : CRÉER ============ */
-function autoEtiq(f){if(!f.auto)f.auto={};const b=f.badges||[];const o=String(f.offre||"");
+const REGLES_ETIQ={
+ approche:[[/avant.{0,12}apr[eè]s|apr[eè]s.{0,6}avant|\bj\s?\+\s?\d/i,"BA"],[/\bvs\b|contre|compar|sachet|plastique|bo[iî]te [àa] pain|torchon|cong[eé]l/i,"COMP"],[/avis|cliente|t[eé]moign|3 ?127|4,8/i,"TESTI"],[/rembours|garanti/i,"GARAN"],[/comment |pourquoi|saviez|secret|astuce|la raison|explique/i,"EDU"],[/ma grand|histoire|depuis que|le jour o[uù]/i,"STORY"],[/regardez|voici|test[eé]|on a test|d[eé]monstr/i,"DEMO"],[/marre|fini |plus jamais|jeter|jet[eé]|rassis|moisi|gaspill/i,"PAS"],[/😂|dr[oô]le|blague/i,"HUMOR"]],
+ desir:[[/moisi|gaspill|jeter|jet[eé]|rassis|perdre|perte/i,"LF3"],[/plastique|naturel|sain|cire|coton|toxique/i,"LF1"],[/famille|enfant|les miens|mari|petits/i,"LF7"],[/cuisine|maison|d[eé]co|joli|beau/i,"LF5"],[/[eé]conom|moins cher|prix|€|lot|pack|offert|promo|r[eé]duc/i,"BARG"],[/simple|facile|geste|pratique|rien [àa] faire/i,"CONV"],[/propre|lavable|hygi[eè]n/i,"CLEAN"],[/avis|clientes|3 ?127|tout le monde/i,"LF8"],[/frais|moelleux|go[uû]t|bon pain|croûte|dernière tartine/i,"LF2"]],
+ emotion:[[/marre|stop|fini |jeter|jet[eé]|agac/i,"FRUST"],[/moisi|peur|attention|danger|toxique/i,"ANX"],[/enfin|plus jamais|soulag|sereine?/i,"RELIEF"],[/grand.m[eè]re|autrefois|comme avant|d'antan/i,"NOSTA"],[/limit[eé]|vite|derni[eè]re? chance|aujourd'hui seulement|stock/i,"URG"],[/d[eé]fi|essayez|cap de/i,"DEFI"],[/avis|rembours|garanti|3 ?127/i,"TRUST"],[/secret|saviez|pourquoi|\?/i,"CURIO"],[/😂|dr[oô]le/i,"HUMOR"]]};
+function regle(k,txt){for(const [re,v] of REGLES_ETIQ[k]){const m=re.exec(txt);if(m)return {v,pourquoi:"déduit de « "+m[0].trim()+" »"}}return null}
+function autoEtiq(f){if(!f.auto)f.auto={};if(!f.raisons)f.raisons={};const b=f.badges||[];const o=String(f.offre||"");
+ const set=(k,v,why)=>{if(f.auto[k])return;if(k==="tunnel")f.tunnel=v;else f.labels[k]=v;f.raisons[k]=why};
  const offre=/lot|pack/i.test(o)?"PACK":b.some(x=>/rembours/i.test(x))?"GAR":b.some(x=>/avis/i.test(x))?"AVIS":/%|promo|code/i.test(o)?"PROMO":"NONE";
- if(!f.auto.offre)f.labels.offre=offre;
- if(!f.auto.tunnel)f.tunnel=offre==="PACK"||offre==="PROMO"?"BOFU":offre==="GAR"||offre==="AVIS"?"MOFU":"TOFU";
- if(!f.labels.format)f.labels.format="STPH"}
+ set("offre",offre,offre==="NONE"?"aucune offre sur la créa":"déduit de l'offre ou des badges");
+ const tunnel=offre==="PACK"||offre==="PROMO"?"BOFU":offre==="GAR"||offre==="AVIS"?"MOFU":"TOFU";
+ set("tunnel",tunnel,tunnel==="BOFU"?"une offre est mise en avant":tunnel==="MOFU"?"la preuve (avis ou garantie) est mise en avant":"pas d'offre : on arrête quelqu'un qui ne nous connaît pas");
+ const txt=[f.headline,f.sous,f.idee,f.note,o,b.join(" ")].join(" · ");
+ const ap=regle("approche",txt);set("approche",offre==="PACK"&&!ap?"OFFER":(ap?ap.v:"IDENT"),offre==="PACK"&&!ap?"l'offre est le sujet principal":(ap?ap.pourquoi:"par défaut : la personne se reconnaît dans la scène"));
+ const de=regle("desir",txt);set("desir",de?de.v:"LF2",de?de.pourquoi:"par défaut : bien manger, du bon pain");
+ const em=regle("emotion",txt);set("emotion",em?em.v:"JOY",em?em.pourquoi:"par défaut : un moment chaleureux");
+ const t=f.tunnel;const marque=/maison de louise|nos sacs|notre sac/i.test(txt);
+ set("conscience",t==="BOFU"?(offre==="PACK"?"MOST":"PROD"):t==="MOFU"?(marque?"PROD":"SOLU"):(/rassis|moisi|jeter|gaspill|marre/i.test(txt)?"PROB":"UNAW"),t==="BOFU"?"bas du tunnel : prête à acheter":t==="MOFU"?"milieu du tunnel : compare les solutions":"haut du tunnel : "+(/rassis|moisi|jeter|gaspill|marre/i.test(txt)?"connaît le problème":"ne pense pas encore au problème"));
+ set("format",f.produit===false&&/liste|graphique|infographie|fond uni|comparatif|tableau/i.test(txt)?"STGR":"STPH",f.produit===false?"scène sans produit":"photo avec le vrai sac")}
 function brouillonForm(){const f=S.form;if(!f.pos)f.pos={};return {headline:f.headline,sous:f.sous,offre:f.offre,bouton:f.bouton,badges:f.badges,produit:f.produit,titre:f.titre,pos:f.pos}}
 let glisse=null;
 document.addEventListener("pointerdown",ev=>{const cv=ev.target.closest&&ev.target.closest("canvas[data-draft]");if(!cv||!cv._zones)return;const r=cv.getBoundingClientRect(),k=cv.width/r.width;const x=(ev.clientX-r.left)*k,y=(ev.clientY-r.top)*k;
@@ -628,11 +641,13 @@ function vCreer(){const f=S.form;autoEtiq(f);const manq=etiqManquantes(f.labels,
    +'<p class="k" style="margin-top:4px">Badges</p>'+puces("badges",BADGES,f.badges,true)
    +'<input type="text" data-ff="bouton" value="'+esc(f.bouton)+'" placeholder="Texte du bouton" aria-label="Bouton">',"tout se déplace sur l'aperçu")
  +etape(5,"Batch, format et nombre",!!f.batch,selBatch(f.batch,'data-ff="batch"')+puces("formats",Object.keys(FORMATS),f.formats[0],false)+'<p class="k" style="margin-top:4px">Nombre de propositions</p><div class="puces">'+[1,2,3,4].map(n=>'<button type="button" class="puce" data-a="nb" data-v="'+n+'" aria-pressed="'+((+f.nb||1)===n)+'" data-aide="'+(n===1?"Une seule image.":"L\'IA fait "+n+" versions de la même fiche : tu gardes la meilleure. Chaque version compte comme une génération.")+'">'+n+'</button>').join("")+'</div>',"")
- +'<details class="avance"><summary>Réglages avancés : étiquettes du nom, taille du titre, note</summary><div class="pile" style="margin-top:12px">'
+ +etape(6,"Étiquettes du nom",true,'<div class="puces">'+["tunnel"].concat(ORDRE_ETIQ.slice(1)).map(k=>{const v=k==="tunnel"?f.tunnel:f.labels[k];const auto=!(f.auto&&f.auto[k]);const why=(f.raisons||{})[k];return '<span class="tag z-vertclair" style="font-size:12.5px;padding:5px 10px" data-aide="'+esc(ETIQ[k].nom+" : "+v+" · "+defEtiq(k,v)+(auto?" (automatique : "+(why||"")+")":" (choisie par toi)"))+'">'+esc(ETIQ[k].nom)+' <b style="margin-left:4px">'+esc(v)+(auto?"":" ✎")+'</b></span>'}).join("")+'</div>'
+   +'<p class="note">Remplies toutes seules d\'après tes textes, ton offre et tes badges : passe la souris sur une étiquette pour voir pourquoi. Elles changent quand tu changes la créa.</p>'
+   +'<details'+(S.etiqOuvert?' open':'')+'><summary class="btn sec petit" style="list-style:none;display:inline-flex" data-a="etiqOuvert">Modifier une étiquette</summary><div class="pile" style="margin-top:10px">'+blocEtiq("tunnel",f.tunnel,"tunnel")+ORDRE_ETIQ.slice(1).map(k=>blocEtiq(k,f.labels[k],"labels."+k)).join("")+'</div></details>',"le nom de la pub")
+ +'<details class="avance"><summary>Réglages avancés : taille du titre, note pour l\'IA</summary><div class="pile" style="margin-top:12px">'
    +'<p class="k">Taille du titre</p>'+puces("titre",["S","M","L"],f.titre,false,{S:"petit",M:"moyen",L:"grand"})
    +'<label class="ch">Note pour l\'IA<textarea data-ff="note" placeholder="Petits détails : sac posé sur une planche…">'+esc(f.note)+'</textarea></label>'
-   +'<p class="k">Étiquettes du nom (remplies toutes seules)</p><div class="puces">'+["tunnel"].concat(ORDRE_ETIQ.slice(1)).map(k=>{const v=k==="tunnel"?f.tunnel:f.labels[k];const auto=!(f.auto&&f.auto[k]);return '<span class="tag'+(v?' z-vertclair':'')+'" data-aide="'+esc(ETIQ[k].nom+(v?" : "+v+" · "+defEtiq(k,v)+(auto?" (déduite automatiquement)":" (choisie par toi)"):" : remplie par Claude quand tu génères"))+'">'+esc(v?v+(auto?"":" ✎"):ETIQ[k].nom+" ?")+'</span>'}).join("")+'</div>'
-   +blocEtiq("tunnel",f.tunnel,"tunnel")+ORDRE_ETIQ.slice(1).map(k=>blocEtiq(k,f.labels[k],"labels."+k)).join("")+'</div></details>';
+   +'</div></details>';
  const apercu='<div class="studio-apercu"><div class="carte pile" style="gap:10px"><div class="ligne" style="justify-content:space-between"><p class="k">Aperçu · '+esc(f.formats[0]||"4:5")+'</p><span class="note">Fais glisser les textes et badges</span></div>'
   +'<div class="toile">'+(f.formats.length?f.formats:["4:5"]).map(fmt=>'<canvas data-draft="form" data-fmt="'+fmt+'"'+(f.refs[0]?' data-fond="'+esc(f.refs[0].slice(2))+'"':'')+'></canvas>').join("")+'</div>'
   +'<div class="ligne" style="flex-wrap:nowrap;gap:12px">'+(p?'<img src="'+blob(p.img)+'" alt="" style="width:46px;height:46px;object-fit:cover;border-radius:10px;border:2px solid var(--or)">':'')+'<p class="note" style="flex:1"><b style="color:var(--texte)">'+(p?esc(p.nom):"Sans produit")+'</b> · '+(modele?"textes du modèle":"tes textes")+'<br><span style="word-break:break-all">'+esc(nomComplet(prochain,f.labels,f.tunnel)||(prochain+" · étiquettes complétées à la génération"))+'</span></p></div>'
@@ -746,11 +761,12 @@ document.addEventListener("click",async ev=>{const lien=ev.target.closest('a[hre
   else if(k==="formats"){S.form.formats=[v]}
   else if(multi){const arr=S.form[k]||[];S.form[k]=arr.includes(v)?arr.filter(x=>x!==v):arr.concat(v)}
   else S.form[k]=v;
+  if(k==="offre"||k==="badges"){if(S.form.auto){delete S.form.auto.offre;delete S.form.auto.tunnel}}
   if(k==="tunnel"&&!S.form.labels.offre)S.form.labels.offre=v==="BOFU"?"PACK":"NONE";
   saveForm();rendre();return}
  if(a==="produit"){S.form.produit=t.dataset.v==="1";saveForm();rendre();return}
  if(a==="ref"){const v=t.dataset.v;S.form.refs=S.form.refs.includes(v)?[]:[v];if(S.srcTab==="gagnantes"&&S.form.refs.length&&!S.form.headline)S.form.textes="modele";saveForm();rendre();return}
- if(a==="offreModele"){S.form.offre="";saveForm();rendre();return}
+ if(a==="offreModele"){if(S.form.auto){delete S.form.auto.offre;delete S.form.auto.tunnel}S.form.offre="";saveForm();rendre();return}
  if(a==="textes"){S.form.textes=t.dataset.v;saveForm();rendre();return}
  if(a==="srcTab"){S.srcTab=t.dataset.v;rendre();return}
  if(a==="sac"){if(t.dataset.v==="aucun"){S.form.produit=false}else{S.form.produit=true;S.form.sac=t.dataset.v}saveForm();rendre();return}
@@ -844,7 +860,7 @@ function demanderNote(titre,q,cb,img){window.__noteCb=cb;const vite=["Retirer le
 async function envoyerImages(files){if(!S.assets){toast("Dépôt indisponible : accès Éditeur requis.");return}let n=0;for(const f of files){try{const r=await S.assets.upload(f);await ecrire("refs/r"+r.id,{asset:r.id,note:"",tags:[],ts:maintenant(),par:S.uid});if(S.tab==="creer"){S.form.refs=["a:"+r.id];saveForm();rendre()}n++}catch(e){toast(e&&e.code==="too_large"?"Image trop lourde (20 Mo max).":"Dépôt refusé : "+(e&&e.code||"erreur"))}}if(n)toast(n+" référence(s) ajoutée(s)")}
 async function envoyerDepots(files){if(!S.assets)return;let n=0;for(const f of files){const ext=(f.name.split(".").pop()||"").toLowerCase();const type={csv:"text/csv",txt:"text/plain",json:"application/json",md:"text/markdown",pdf:"application/pdf"}[ext];try{const r=await S.assets.upload(f,type?{type}:undefined);await ecrire("depots/d"+r.id,{asset:r.id,nom:f.name,ts:maintenant(),traite:false,par:S.uid});n++}catch(e){toast("Dépôt refusé : "+(e&&e.code||"erreur"))}}if(n)toast(n+" fichier(s) déposé(s)")}
 
-async function genererMere(){const f=S.form;autoEtiq(f);if(etiqManquantes(f.labels,f.tunnel).length){toast("Claude complète les étiquettes…");await proposerFiche(true)}
+async function genererMere(){const f=S.form;autoEtiq(f);
  const n=prochainNum();const code=codeId(n);const nom=nomComplet(code+"H1",f.labels,f.tunnel);if(!nom){S.etiqOuvert=true;rendre();toast("Claude n'a pas pu compléter : choisis les étiquettes manquantes dans « Modifier les étiquettes »");return}
  const id="m"+String(n).padStart(3,"0")+"-"+Date.now().toString(36);
  const ok=await ecrire("meres/"+id,{num:n,code,batch:f.batch,refs:f.refs.map(r=>r.slice(2)),idee:f.idee,headline:f.headline,sous:f.sous,offre:f.offre,bouton:f.bouton,badges:f.badges,produit:f.produit!==false,sac:f.sac||"pain",textes:f.textes||"miens",note:f.note,tunnel:f.tunnel,labels:Object.assign({},f.labels,{tunnel:f.tunnel}),formats:f.formats,titre:f.titre,pos:f.pos||{},nb:+f.nb||1,statut:"a_generer",nom,ts:maintenant(),par:S.uid,images:{}});
