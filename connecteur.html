@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Connecter Claude</title>
+<style>
+:root{--fond:#14110F;--carte:#1E1A17;--bord:#332C26;--texte:#F4EEE6;--doux:#B5A99B;--accent:#D4FF3A;--rouge:#FB7185}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--fond);color:var(--texte);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;align-items:center;justify-content:center;padding:16px}
+.carte{width:100%;max-width:440px;background:var(--carte);border:1px solid var(--bord);border-radius:18px;padding:26px}
+h1{font-size:21px;margin:0 0 6px}
+p{margin:0 0 12px;color:var(--doux)}
+b{color:var(--texte)}
+ul{margin:0 0 14px;padding-left:18px;color:var(--doux)}
+li{margin:3px 0}
+.k{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700;margin:14px 0 4px}
+.non li::marker{color:var(--rouge)}
+input{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--bord);background:var(--fond);color:var(--texte);font:inherit;margin:0 0 10px}
+.btns{display:flex;gap:10px;margin-top:16px}
+button{flex:1;padding:12px;border-radius:12px;border:0;font:inherit;font-weight:700;cursor:pointer}
+.oui{background:var(--accent);color:#14110F}
+.sec{background:transparent;color:var(--texte);border:1px solid var(--bord)}
+.err{color:var(--rouge)}
+a{color:var(--doux)}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main class="carte" aria-live="polite">
+  <div id="attente"><h1>Connecter Claude</h1><p>Un instant…</p></div>
+
+  <form id="connexion" hidden>
+    <h1>Connecter Claude à Test and Learn</h1>
+    <p>Connecte-toi avec ton compte Test and Learn (le même que pour l'appli).</p>
+    <input id="email" type="email" autocomplete="email" placeholder="E-mail" required>
+    <input id="mdp" type="password" autocomplete="current-password" placeholder="Mot de passe" required>
+    <p id="errCx" class="err" hidden></p>
+    <div class="btns"><button class="oui" type="submit">Se connecter</button></div>
+  </form>
+
+  <div id="accord" hidden>
+    <h1>Autoriser Claude ?</h1>
+    <p><b id="client">Claude</b> demande l'accès au tableau de bord Test and Learn avec ton compte <b id="qui"></b>.</p>
+    <p class="k">Il pourra</p>
+    <ul><li>lire les signaux du jour, les pubs et leurs chiffres</li><li>lire les verbatims et les fichiers des projets</li><li>enregistrer des briefs, des accroches et des images en <b>brouillon</b></li></ul>
+    <p class="k">Il ne pourra pas</p>
+    <ul class="non"><li>envoyer quoi que ce soit au Drive ou à Meta</li><li>toucher aux pubs, aux campagnes ou aux budgets</li><li>lire ta clé Claude</li></ul>
+    <p>Un brouillon ne part nulle part tant que tu ne l'as pas validé dans l'appli.</p>
+    <p id="errAc" class="err" hidden></p>
+    <div class="btns"><button class="sec" id="non" type="button">Refuser</button><button class="oui" id="oui" type="button">Autoriser</button></div>
+    <p style="margin-top:14px;font-size:13px">Ce n'est pas ton compte ? <a href="#" id="sortir">Se déconnecter</a></p>
+  </div>
+
+  <div id="fin" hidden><h1 id="finT"></h1><p id="finP"></p></div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+(function(){
+"use strict";
+const URL_SB="https://yapuwtsrwagowtuzwdlu.supabase.co",CLE="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlhcHV3dHNyd2Fnb3d0dXp3ZGx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEyMjAzNDIsImV4cCI6MjEwNjc5NjM0Mn0.x3v2HhMk4acPKE0M9ZqFOQU8bYBm4-A-pL7ROX22eQA";
+const sb=window.supabase.createClient(URL_SB,CLE,{auth:{persistSession:true,autoRefreshToken:true}});
+const id=new URLSearchParams(location.search).get("authorization_id");
+const $=s=>document.getElementById(s);
+function voir(b){["attente","connexion","accord","fin"].forEach(x=>$(x).hidden=x!==b)}
+function fin(t,p){$("finT").textContent=t;$("finP").textContent=p;voir("fin")}
+async function api(chemin,opt){const {data:{session}}=await sb.auth.getSession();
+  const r=await fetch(URL_SB+"/auth/v1/oauth/authorizations/"+encodeURIComponent(id)+chemin,{...opt,headers:{apikey:CLE,Authorization:"Bearer "+session.access_token,"Content-Type":"application/json"}});
+  const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error(j.msg||j.error_description||j.message||("erreur "+r.status));return j}
+async function demarrer(){
+  if(!id){fin("Lien incomplet","Cette page s'ouvre depuis claude.ai, quand tu ajoutes le connecteur Test and Learn.");return}
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){voir("connexion");return}
+  try{const d=await api("",{method:"GET"});
+    if(d.redirect_url){location.replace(d.redirect_url);return}
+    $("client").textContent=(d.client&&d.client.name)||"Claude";$("qui").textContent=(d.user&&d.user.email)||session.user.email;voir("accord")}
+  catch(e){fin("Demande expirée","Recommence depuis claude.ai : Réglages, Connecteurs, Test and Learn, Se connecter. ("+e.message+")")}}
+async function repondre(action){$("oui").disabled=$("non").disabled=true;$("errAc").hidden=true;
+  try{const r=await api("/consent",{method:"POST",body:JSON.stringify({action})});
+    if(r.redirect_url){fin(action==="approve"?"C'est fait":"Refusé",action==="approve"?"Retour vers Claude…":"Retour vers Claude, sans accès.");location.replace(r.redirect_url)}
+    else throw new Error("réponse inattendue")}
+  catch(e){$("errAc").textContent="Ça n'a pas marché : "+e.message;$("errAc").hidden=false;$("oui").disabled=$("non").disabled=false}}
+$("connexion").addEventListener("submit",async ev=>{ev.preventDefault();$("errCx").hidden=true;
+  const {error}=await sb.auth.signInWithPassword({email:$("email").value.trim(),password:$("mdp").value});
+  if(error){$("errCx").textContent="E-mail ou mot de passe incorrect.";$("errCx").hidden=false;return}
+  voir("attente");demarrer()});
+$("oui").addEventListener("click",()=>repondre("approve"));
+$("non").addEventListener("click",()=>repondre("deny"));
+$("sortir").addEventListener("click",async ev=>{ev.preventDefault();await sb.auth.signOut();voir("connexion")});
+demarrer();
+})();
+</script>
+</body>
+</html>
